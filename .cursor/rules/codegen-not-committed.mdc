@@ -1,0 +1,11 @@
+---
+description: Never commit or push the .codegen directory
+alwaysApply: true
+---
+
+# `.codegen` must not be committed
+
+- **Never** `git add`, commit, or push `.codegen/` (or nested `zero_codegen` tool trees).
+- `.codegen/` is listed in `.gitignore` as a safeguard; do not force-add it.
+- To restore codegen tooling locally, copy `.codegen/` from the `zero-apps-codegen-scaffold` baseline, set `package_scope` to `@ledgerfit`, then run `pnpm codegen:paths`.
+- Generated OpenAPI bundles under `packages/openapi-core/src/.bundled/` are also gitignored.

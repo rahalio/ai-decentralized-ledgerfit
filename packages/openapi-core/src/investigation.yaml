@@ -1,0 +1,193 @@
+openapi: 3.1.0
+info:
+  title: Investigation API
+  version: 0.1.0
+  description: |
+    Masked rule hits, dual-control reveal requests, and case notes.
+  license:
+    name: Proprietary
+    url: https://ledgerfit.local/license
+  x-domain: inv
+servers:
+  - url: https://api.ledgerfit.local
+    description: Local / product API
+security:
+  - apiKey: []
+tags:
+  - name: Investigation
+    description: Masked hits and dual-control reveal
+  - name: CaseNotes
+    description: Investigator case notes
+paths:
+  /v1/investigation/hits:
+    get:
+      operationId: listMaskedHits
+      tags: [Investigation]
+      summary: List masked association-rule hits for investigation
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Masked hits page
+          content:
+            application/json:
+              schema:
+                $ref: ./investigation.schemas.yaml#/components/schemas/MaskedHitListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/investigation/reveals:
+    get:
+      operationId: listRevealRequests
+      tags: [Investigation]
+      summary: List dual-control reveal requests
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Reveal requests page
+          content:
+            application/json:
+              schema:
+                $ref: ./investigation.schemas.yaml#/components/schemas/RevealRequestListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createRevealRequest
+      tags: [Investigation]
+      summary: Request dual-control reveal of a masked hit
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./investigation.schemas.yaml#/components/schemas/RevealRequestCreate
+      responses:
+        '201':
+          description: Reveal requested
+          content:
+            application/json:
+              schema:
+                $ref: ./investigation.schemas.yaml#/components/schemas/RevealRequestResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/investigation/reveals/{revealRequestId}:
+    parameters:
+      - name: revealRequestId
+        in: path
+        required: true
+        schema:
+          $ref: ./investigation.schemas.yaml#/components/schemas/RevealRequestId
+    get:
+      operationId: getRevealRequest
+      tags: [Investigation]
+      summary: Get a reveal request
+      responses:
+        '200':
+          description: Reveal request
+          content:
+            application/json:
+              schema:
+                $ref: ./investigation.schemas.yaml#/components/schemas/RevealRequestResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/investigation/reveals/{revealRequestId}/decide:
+    parameters:
+      - name: revealRequestId
+        in: path
+        required: true
+        schema:
+          $ref: ./investigation.schemas.yaml#/components/schemas/RevealRequestId
+    post:
+      operationId: decideRevealRequest
+      tags: [Investigation]
+      summary: Approve or deny a dual-control reveal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./investigation.schemas.yaml#/components/schemas/RevealDecision
+      responses:
+        '200':
+          description: Reveal decision applied
+          content:
+            application/json:
+              schema:
+                $ref: ./investigation.schemas.yaml#/components/schemas/RevealRequestResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/investigation/case-notes:
+    get:
+      operationId: listCaseNotes
+      tags: [CaseNotes]
+      summary: List case notes
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Case notes page
+          content:
+            application/json:
+              schema:
+                $ref: ./investigation.schemas.yaml#/components/schemas/CaseNoteListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createCaseNote
+      tags: [CaseNotes]
+      summary: Add a case note to a masked hit
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./investigation.schemas.yaml#/components/schemas/CaseNoteCreate
+      responses:
+        '201':
+          description: Case note created
+          content:
+            application/json:
+              schema:
+                $ref: ./investigation.schemas.yaml#/components/schemas/CaseNoteResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

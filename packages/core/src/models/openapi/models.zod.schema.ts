@@ -1,0 +1,820 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const registerModelArtefact_Body = z
+  .object({
+    ledgerId: z.string(),
+    jobId: z.string(),
+    algorithm: z.string(),
+    contentDigest: z.string(),
+    dataLabel: z.enum(['synthetic', 'production']),
+    armThresholds: z
+      .object({
+        minSupport: z.number().gte(0).lte(1),
+        minConfidence: z.number().gte(0).lte(1),
+        maxItems: z.number().int().gte(1).lte(10),
+      })
+      .passthrough()
+      .optional(),
+    thresholdPolicyId: z.string().optional(),
+    ruleCount: z.number().int().optional(),
+    metrics: z.object({}).partial().passthrough().optional(),
+  })
+  .passthrough();
+const promoteModelArtefact_Body = z
+  .object({ approverNote: z.string(), dualControlToken: z.string().optional() })
+  .passthrough();
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const ArtefactId = z.string();
+const PromotionState = z.enum([
+  'experimental',
+  'staging',
+  'production',
+  'rejected',
+  'quarantinedSynthetic',
+]);
+const ArmThresholds = z
+  .object({
+    minSupport: z.number().gte(0).lte(1),
+    minConfidence: z.number().gte(0).lte(1),
+    maxItems: z.number().int().gte(1).lte(10),
+  })
+  .passthrough();
+const ModelArtefact = z
+  .object({
+    id: z.string().min(1),
+    ledgerId: z.string(),
+    jobId: z.string(),
+    algorithm: z.string(),
+    contentDigest: z.string(),
+    promotionState: z.enum([
+      'experimental',
+      'staging',
+      'production',
+      'rejected',
+      'quarantinedSynthetic',
+    ]),
+    dataLabel: z.enum(['synthetic', 'production']),
+    armThresholds: z
+      .object({
+        minSupport: z.number().gte(0).lte(1),
+        minConfidence: z.number().gte(0).lte(1),
+        maxItems: z.number().int().gte(1).lte(10),
+      })
+      .passthrough()
+      .optional(),
+    thresholdPolicyId: z.union([z.string(), z.null()]).optional(),
+    ruleCount: z.number().int().gte(0).optional(),
+    metrics: z.object({}).partial().passthrough().optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    promotedAt: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const ModelArtefactListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().min(1),
+          ledgerId: z.string(),
+          jobId: z.string(),
+          algorithm: z.string(),
+          contentDigest: z.string(),
+          promotionState: z.enum([
+            'experimental',
+            'staging',
+            'production',
+            'rejected',
+            'quarantinedSynthetic',
+          ]),
+          dataLabel: z.enum(['synthetic', 'production']),
+          armThresholds: z
+            .object({
+              minSupport: z.number().gte(0).lte(1),
+              minConfidence: z.number().gte(0).lte(1),
+              maxItems: z.number().int().gte(1).lte(10),
+            })
+            .passthrough()
+            .optional(),
+          thresholdPolicyId: z.union([z.string(), z.null()]).optional(),
+          ruleCount: z.number().int().gte(0).optional(),
+          metrics: z.object({}).partial().passthrough().optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          promotedAt: z.union([z.string(), z.null()]).optional(),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const ModelArtefactListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().min(1),
+              ledgerId: z.string(),
+              jobId: z.string(),
+              algorithm: z.string(),
+              contentDigest: z.string(),
+              promotionState: z.enum([
+                'experimental',
+                'staging',
+                'production',
+                'rejected',
+                'quarantinedSynthetic',
+              ]),
+              dataLabel: z.enum(['synthetic', 'production']),
+              armThresholds: z
+                .object({
+                  minSupport: z.number().gte(0).lte(1),
+                  minConfidence: z.number().gte(0).lte(1),
+                  maxItems: z.number().int().gte(1).lte(10),
+                })
+                .passthrough()
+                .optional(),
+              thresholdPolicyId: z.union([z.string(), z.null()]).optional(),
+              ruleCount: z.number().int().gte(0).optional(),
+              metrics: z.object({}).partial().passthrough().optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              promotedAt: z.union([z.string(), z.null()]).optional(),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ModelArtefactCreate = z
+  .object({
+    ledgerId: z.string(),
+    jobId: z.string(),
+    algorithm: z.string(),
+    contentDigest: z.string(),
+    dataLabel: z.enum(['synthetic', 'production']),
+    armThresholds: z
+      .object({
+        minSupport: z.number().gte(0).lte(1),
+        minConfidence: z.number().gte(0).lte(1),
+        maxItems: z.number().int().gte(1).lte(10),
+      })
+      .passthrough()
+      .optional(),
+    thresholdPolicyId: z.string().optional(),
+    ruleCount: z.number().int().optional(),
+    metrics: z.object({}).partial().passthrough().optional(),
+  })
+  .passthrough();
+const ModelArtefactResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().min(1),
+        ledgerId: z.string(),
+        jobId: z.string(),
+        algorithm: z.string(),
+        contentDigest: z.string(),
+        promotionState: z.enum([
+          'experimental',
+          'staging',
+          'production',
+          'rejected',
+          'quarantinedSynthetic',
+        ]),
+        dataLabel: z.enum(['synthetic', 'production']),
+        armThresholds: z
+          .object({
+            minSupport: z.number().gte(0).lte(1),
+            minConfidence: z.number().gte(0).lte(1),
+            maxItems: z.number().int().gte(1).lte(10),
+          })
+          .passthrough()
+          .optional(),
+        thresholdPolicyId: z.union([z.string(), z.null()]).optional(),
+        ruleCount: z.number().int().gte(0).optional(),
+        metrics: z.object({}).partial().passthrough().optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        promotedAt: z.union([z.string(), z.null()]).optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ModelPromotionRequest = z
+  .object({ approverNote: z.string(), dualControlToken: z.string().optional() })
+  .passthrough();
+const RuleId = z.string();
+const AssociationRule = z
+  .object({
+    id: z.string().min(1),
+    artefactId: z.string().min(1),
+    antecedents: z.array(z.string()),
+    consequents: z.array(z.string()),
+    support: z.number(),
+    confidence: z.number(),
+    lift: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+const AssociationRuleListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().min(1),
+          artefactId: z.string().min(1),
+          antecedents: z.array(z.string()),
+          consequents: z.array(z.string()),
+          support: z.number(),
+          confidence: z.number(),
+          lift: z.union([z.number(), z.null()]).optional(),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+const AssociationRuleListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().min(1),
+              artefactId: z.string().min(1),
+              antecedents: z.array(z.string()),
+              consequents: z.array(z.string()),
+              support: z.number(),
+              confidence: z.number(),
+              lift: z.union([z.number(), z.null()]).optional(),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const schemas: any = {
+  registerModelArtefact_Body,
+  promoteModelArtefact_Body,
+  Problem,
+  ArtefactId,
+  PromotionState,
+  ArmThresholds,
+  ModelArtefact,
+  ModelArtefactListData,
+  ResponseMeta,
+  ModelArtefactListResponse,
+  ModelArtefactCreate,
+  ModelArtefactResponse,
+  ModelPromotionRequest,
+  RuleId,
+  AssociationRule,
+  AssociationRuleListData,
+  AssociationRuleListResponse,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/model-artefacts',
+    alias: 'listModelArtefacts',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().min(1),
+                  ledgerId: z.string(),
+                  jobId: z.string(),
+                  algorithm: z.string(),
+                  contentDigest: z.string(),
+                  promotionState: z.enum([
+                    'experimental',
+                    'staging',
+                    'production',
+                    'rejected',
+                    'quarantinedSynthetic',
+                  ]),
+                  dataLabel: z.enum(['synthetic', 'production']),
+                  armThresholds: z
+                    .object({
+                      minSupport: z.number().gte(0).lte(1),
+                      minConfidence: z.number().gte(0).lte(1),
+                      maxItems: z.number().int().gte(1).lte(10),
+                    })
+                    .passthrough()
+                    .optional(),
+                  thresholdPolicyId: z.union([z.string(), z.null()]).optional(),
+                  ruleCount: z.number().int().gte(0).optional(),
+                  metrics: z.object({}).partial().passthrough().optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  promotedAt: z.union([z.string(), z.null()]).optional(),
+                })
+                .passthrough()
+            ),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/model-artefacts',
+    alias: 'registerModelArtefact',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: registerModelArtefact_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().min(1),
+            ledgerId: z.string(),
+            jobId: z.string(),
+            algorithm: z.string(),
+            contentDigest: z.string(),
+            promotionState: z.enum([
+              'experimental',
+              'staging',
+              'production',
+              'rejected',
+              'quarantinedSynthetic',
+            ]),
+            dataLabel: z.enum(['synthetic', 'production']),
+            armThresholds: z
+              .object({
+                minSupport: z.number().gte(0).lte(1),
+                minConfidence: z.number().gte(0).lte(1),
+                maxItems: z.number().int().gte(1).lte(10),
+              })
+              .passthrough()
+              .optional(),
+            thresholdPolicyId: z.union([z.string(), z.null()]).optional(),
+            ruleCount: z.number().int().gte(0).optional(),
+            metrics: z.object({}).partial().passthrough().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            promotedAt: z.union([z.string(), z.null()]).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/model-artefacts/:artefactId',
+    alias: 'getModelArtefact',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'artefactId',
+        type: 'Path',
+        schema: z.string().min(1),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().min(1),
+            ledgerId: z.string(),
+            jobId: z.string(),
+            algorithm: z.string(),
+            contentDigest: z.string(),
+            promotionState: z.enum([
+              'experimental',
+              'staging',
+              'production',
+              'rejected',
+              'quarantinedSynthetic',
+            ]),
+            dataLabel: z.enum(['synthetic', 'production']),
+            armThresholds: z
+              .object({
+                minSupport: z.number().gte(0).lte(1),
+                minConfidence: z.number().gte(0).lte(1),
+                maxItems: z.number().int().gte(1).lte(10),
+              })
+              .passthrough()
+              .optional(),
+            thresholdPolicyId: z.union([z.string(), z.null()]).optional(),
+            ruleCount: z.number().int().gte(0).optional(),
+            metrics: z.object({}).partial().passthrough().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            promotedAt: z.union([z.string(), z.null()]).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/model-artefacts/:artefactId/promote',
+    alias: 'promoteModelArtefact',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: promoteModelArtefact_Body,
+      },
+      {
+        name: 'artefactId',
+        type: 'Path',
+        schema: z.string().min(1),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().min(1),
+            ledgerId: z.string(),
+            jobId: z.string(),
+            algorithm: z.string(),
+            contentDigest: z.string(),
+            promotionState: z.enum([
+              'experimental',
+              'staging',
+              'production',
+              'rejected',
+              'quarantinedSynthetic',
+            ]),
+            dataLabel: z.enum(['synthetic', 'production']),
+            armThresholds: z
+              .object({
+                minSupport: z.number().gte(0).lte(1),
+                minConfidence: z.number().gte(0).lte(1),
+                maxItems: z.number().int().gte(1).lte(10),
+              })
+              .passthrough()
+              .optional(),
+            thresholdPolicyId: z.union([z.string(), z.null()]).optional(),
+            ruleCount: z.number().int().gte(0).optional(),
+            metrics: z.object({}).partial().passthrough().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            promotedAt: z.union([z.string(), z.null()]).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/model-artefacts/:artefactId/rules',
+    alias: 'listAssociationRules',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'artefactId',
+        type: 'Path',
+        schema: z.string().min(1),
+      },
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().min(1),
+                  artefactId: z.string().min(1),
+                  antecedents: z.array(z.string()),
+                  consequents: z.array(z.string()),
+                  support: z.number(),
+                  confidence: z.number(),
+                  lift: z.union([z.number(), z.null()]).optional(),
+                })
+                .passthrough()
+            ),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

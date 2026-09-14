@@ -1,0 +1,70 @@
+openapi: 3.1.0
+info:
+  title: Provenance schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    RecordId:
+      type: string
+      minLength: 1
+    ProvenanceRecord:
+      type: object
+      required: [id, artefactId, ledgerId, jobId, eventWindowDigest, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/RecordId' }
+        artefactId: { type: string }
+        ledgerId: { type: string }
+        jobId: { type: string }
+        triggerId: { type: [string, 'null'] }
+        eventWindowDigest: { type: string }
+        thresholdPolicyId: { type: [string, 'null'] }
+        evaluatorIdentity: { type: string }
+        createdAt: { type: string, format: date-time }
+    ProvenanceExportRequest:
+      type: object
+      required: [artefactIds]
+      properties:
+        artefactIds:
+          type: array
+          items: { type: string }
+          minItems: 1
+        includePhi: { type: boolean, default: false, description: Always false for regulator packs }
+        note: { type: string }
+    ProvenanceExport:
+      type: object
+      required: [exportId, artefactIds, contentDigest, createdAt, downloadRef]
+      properties:
+        exportId: { type: string }
+        artefactIds:
+          type: array
+          items: { type: string }
+        contentDigest: { type: string }
+        createdAt: { type: string, format: date-time }
+        downloadRef: { type: string }
+        expiresAt: { type: [string, 'null'], format: date-time }
+    ProvenanceRecordResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ProvenanceRecord' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    ProvenanceRecordListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ProvenanceRecord' }
+    ProvenanceRecordListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ProvenanceRecordListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    ProvenanceExportResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ProvenanceExport' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

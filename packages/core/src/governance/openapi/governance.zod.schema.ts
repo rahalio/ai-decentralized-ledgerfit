@@ -1,0 +1,890 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const createThresholdPolicy_Body = z
+  .object({
+    name: z.string(),
+    thresholds: z
+      .object({
+        minSupport: z.number().gte(0).lte(1).default(0.2),
+        minConfidence: z.number().gte(0).lte(1).default(0.7),
+        maxItems: z.number().int().gte(1).lte(10).default(3),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+const createDataSourcePolicy_Body = z
+  .object({ ledgerId: z.string(), notes: z.string().optional() })
+  .passthrough();
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const PolicyId = z.string();
+const ArmThresholds = z
+  .object({
+    minSupport: z.number().gte(0).lte(1).default(0.2),
+    minConfidence: z.number().gte(0).lte(1).default(0.7),
+    maxItems: z.number().int().gte(1).lte(10).default(3),
+  })
+  .passthrough();
+const ThresholdPolicy = z
+  .object({
+    id: z.string().min(1),
+    version: z.number().int().gte(1),
+    name: z.string().optional(),
+    thresholds: z
+      .object({
+        minSupport: z.number().gte(0).lte(1).default(0.2),
+        minConfidence: z.number().gte(0).lte(1).default(0.7),
+        maxItems: z.number().int().gte(1).lte(10).default(3),
+      })
+      .passthrough(),
+    status: z.enum(['draft', 'pendingApproval', 'approved', 'superseded']),
+    createdBy: z.string().optional(),
+    approvedBy: z.union([z.string(), z.null()]).optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    approvedAt: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const ThresholdPolicyListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().min(1),
+          version: z.number().int().gte(1),
+          name: z.string().optional(),
+          thresholds: z
+            .object({
+              minSupport: z.number().gte(0).lte(1).default(0.2),
+              minConfidence: z.number().gte(0).lte(1).default(0.7),
+              maxItems: z.number().int().gte(1).lte(10).default(3),
+            })
+            .passthrough(),
+          status: z.enum([
+            'draft',
+            'pendingApproval',
+            'approved',
+            'superseded',
+          ]),
+          createdBy: z.string().optional(),
+          approvedBy: z.union([z.string(), z.null()]).optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          approvedAt: z.union([z.string(), z.null()]).optional(),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const ThresholdPolicyListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().min(1),
+              version: z.number().int().gte(1),
+              name: z.string().optional(),
+              thresholds: z
+                .object({
+                  minSupport: z.number().gte(0).lte(1).default(0.2),
+                  minConfidence: z.number().gte(0).lte(1).default(0.7),
+                  maxItems: z.number().int().gte(1).lte(10).default(3),
+                })
+                .passthrough(),
+              status: z.enum([
+                'draft',
+                'pendingApproval',
+                'approved',
+                'superseded',
+              ]),
+              createdBy: z.string().optional(),
+              approvedBy: z.union([z.string(), z.null()]).optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              approvedAt: z.union([z.string(), z.null()]).optional(),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ThresholdPolicyCreate = z
+  .object({
+    name: z.string(),
+    thresholds: z
+      .object({
+        minSupport: z.number().gte(0).lte(1).default(0.2),
+        minConfidence: z.number().gte(0).lte(1).default(0.7),
+        maxItems: z.number().int().gte(1).lte(10).default(3),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+const ThresholdPolicyResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().min(1),
+        version: z.number().int().gte(1),
+        name: z.string().optional(),
+        thresholds: z
+          .object({
+            minSupport: z.number().gte(0).lte(1).default(0.2),
+            minConfidence: z.number().gte(0).lte(1).default(0.7),
+            maxItems: z.number().int().gte(1).lte(10).default(3),
+          })
+          .passthrough(),
+        status: z.enum(['draft', 'pendingApproval', 'approved', 'superseded']),
+        createdBy: z.string().optional(),
+        approvedBy: z.union([z.string(), z.null()]).optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        approvedAt: z.union([z.string(), z.null()]).optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ThresholdPolicyApprove = z
+  .object({ approverNote: z.string() })
+  .passthrough();
+const DataSourcePolicyId = z.string();
+const DataSourcePolicy = z
+  .object({
+    id: z.string().min(1),
+    ledgerId: z.string(),
+    allowPublicChain: z.literal(false),
+    allowSyntheticProduction: z.literal(false),
+    requirePermissioned: z.literal(true).optional(),
+    status: z.enum(['active', 'retired']),
+    notes: z.string().optional(),
+  })
+  .passthrough();
+const DataSourcePolicyListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().min(1),
+          ledgerId: z.string(),
+          allowPublicChain: z.literal(false),
+          allowSyntheticProduction: z.literal(false),
+          requirePermissioned: z.literal(true).optional(),
+          status: z.enum(['active', 'retired']),
+          notes: z.string().optional(),
+        })
+        .passthrough()
+    ),
+  })
+  .passthrough();
+const DataSourcePolicyListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().min(1),
+              ledgerId: z.string(),
+              allowPublicChain: z.literal(false),
+              allowSyntheticProduction: z.literal(false),
+              requirePermissioned: z.literal(true).optional(),
+              status: z.enum(['active', 'retired']),
+              notes: z.string().optional(),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const DataSourcePolicyCreate = z
+  .object({ ledgerId: z.string(), notes: z.string().optional() })
+  .passthrough();
+const DataSourcePolicyResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().min(1),
+        ledgerId: z.string(),
+        allowPublicChain: z.literal(false),
+        allowSyntheticProduction: z.literal(false),
+        requirePermissioned: z.literal(true).optional(),
+        status: z.enum(['active', 'retired']),
+        notes: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const schemas: any = {
+  createThresholdPolicy_Body,
+  createDataSourcePolicy_Body,
+  Problem,
+  PolicyId,
+  ArmThresholds,
+  ThresholdPolicy,
+  ThresholdPolicyListData,
+  ResponseMeta,
+  ThresholdPolicyListResponse,
+  ThresholdPolicyCreate,
+  ThresholdPolicyResponse,
+  ThresholdPolicyApprove,
+  DataSourcePolicyId,
+  DataSourcePolicy,
+  DataSourcePolicyListData,
+  DataSourcePolicyListResponse,
+  DataSourcePolicyCreate,
+  DataSourcePolicyResponse,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/data-source-policies',
+    alias: 'listDataSourcePolicies',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().min(1),
+                  ledgerId: z.string(),
+                  allowPublicChain: z.literal(false),
+                  allowSyntheticProduction: z.literal(false),
+                  requirePermissioned: z.literal(true).optional(),
+                  status: z.enum(['active', 'retired']),
+                  notes: z.string().optional(),
+                })
+                .passthrough()
+            ),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/data-source-policies',
+    alias: 'createDataSourcePolicy',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: createDataSourcePolicy_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().min(1),
+            ledgerId: z.string(),
+            allowPublicChain: z.literal(false),
+            allowSyntheticProduction: z.literal(false),
+            requirePermissioned: z.literal(true).optional(),
+            status: z.enum(['active', 'retired']),
+            notes: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/data-source-policies/:policyId',
+    alias: 'getDataSourcePolicy',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'policyId',
+        type: 'Path',
+        schema: z.string().min(1),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().min(1),
+            ledgerId: z.string(),
+            allowPublicChain: z.literal(false),
+            allowSyntheticProduction: z.literal(false),
+            requirePermissioned: z.literal(true).optional(),
+            status: z.enum(['active', 'retired']),
+            notes: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/threshold-policies',
+    alias: 'listThresholdPolicies',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(200).optional().default(50),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().min(1),
+                  version: z.number().int().gte(1),
+                  name: z.string().optional(),
+                  thresholds: z
+                    .object({
+                      minSupport: z.number().gte(0).lte(1).default(0.2),
+                      minConfidence: z.number().gte(0).lte(1).default(0.7),
+                      maxItems: z.number().int().gte(1).lte(10).default(3),
+                    })
+                    .passthrough(),
+                  status: z.enum([
+                    'draft',
+                    'pendingApproval',
+                    'approved',
+                    'superseded',
+                  ]),
+                  createdBy: z.string().optional(),
+                  approvedBy: z.union([z.string(), z.null()]).optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  approvedAt: z.union([z.string(), z.null()]).optional(),
+                })
+                .passthrough()
+            ),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/threshold-policies',
+    alias: 'createThresholdPolicy',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: createThresholdPolicy_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().min(1),
+            version: z.number().int().gte(1),
+            name: z.string().optional(),
+            thresholds: z
+              .object({
+                minSupport: z.number().gte(0).lte(1).default(0.2),
+                minConfidence: z.number().gte(0).lte(1).default(0.7),
+                maxItems: z.number().int().gte(1).lte(10).default(3),
+              })
+              .passthrough(),
+            status: z.enum([
+              'draft',
+              'pendingApproval',
+              'approved',
+              'superseded',
+            ]),
+            createdBy: z.string().optional(),
+            approvedBy: z.union([z.string(), z.null()]).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            approvedAt: z.union([z.string(), z.null()]).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/threshold-policies/:policyId',
+    alias: 'getThresholdPolicy',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'policyId',
+        type: 'Path',
+        schema: z.string().min(1),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().min(1),
+            version: z.number().int().gte(1),
+            name: z.string().optional(),
+            thresholds: z
+              .object({
+                minSupport: z.number().gte(0).lte(1).default(0.2),
+                minConfidence: z.number().gte(0).lte(1).default(0.7),
+                maxItems: z.number().int().gte(1).lte(10).default(3),
+              })
+              .passthrough(),
+            status: z.enum([
+              'draft',
+              'pendingApproval',
+              'approved',
+              'superseded',
+            ]),
+            createdBy: z.string().optional(),
+            approvedBy: z.union([z.string(), z.null()]).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            approvedAt: z.union([z.string(), z.null()]).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/threshold-policies/:policyId/approve',
+    alias: 'approveThresholdPolicy',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ approverNote: z.string() }).passthrough(),
+      },
+      {
+        name: 'policyId',
+        type: 'Path',
+        schema: z.string().min(1),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().min(1),
+            version: z.number().int().gte(1),
+            name: z.string().optional(),
+            thresholds: z
+              .object({
+                minSupport: z.number().gte(0).lte(1).default(0.2),
+                minConfidence: z.number().gte(0).lte(1).default(0.7),
+                maxItems: z.number().int().gte(1).lte(10).default(3),
+              })
+              .passthrough(),
+            status: z.enum([
+              'draft',
+              'pendingApproval',
+              'approved',
+              'superseded',
+            ]),
+            createdBy: z.string().optional(),
+            approvedBy: z.union([z.string(), z.null()]).optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            approvedAt: z.union([z.string(), z.null()]).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

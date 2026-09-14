@@ -1,0 +1,201 @@
+openapi: 3.1.0
+info:
+  title: Governance API
+  version: 0.1.0
+  description: |
+    Versioned ARM threshold policies and data-source governance.
+  license:
+    name: Proprietary
+    url: https://ledgerfit.local/license
+  x-domain: gov
+servers:
+  - url: https://api.ledgerfit.local
+    description: Local / product API
+security:
+  - apiKey: []
+tags:
+  - name: ThresholdPolicies
+    description: Versioned support/confidence/max-items policies
+  - name: DataSourcePolicies
+    description: Permissioned-source and synthetic production gates
+paths:
+  /v1/threshold-policies:
+    get:
+      operationId: listThresholdPolicies
+      tags: [ThresholdPolicies]
+      summary: List threshold policy versions
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Policies page
+          content:
+            application/json:
+              schema:
+                $ref: ./governance.schemas.yaml#/components/schemas/ThresholdPolicyListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createThresholdPolicy
+      tags: [ThresholdPolicies]
+      summary: Propose a new threshold policy version
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./governance.schemas.yaml#/components/schemas/ThresholdPolicyCreate
+      responses:
+        '201':
+          description: Policy draft created
+          content:
+            application/json:
+              schema:
+                $ref: ./governance.schemas.yaml#/components/schemas/ThresholdPolicyResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/threshold-policies/{policyId}:
+    parameters:
+      - name: policyId
+        in: path
+        required: true
+        schema:
+          $ref: ./governance.schemas.yaml#/components/schemas/PolicyId
+    get:
+      operationId: getThresholdPolicy
+      tags: [ThresholdPolicies]
+      summary: Get a threshold policy
+      responses:
+        '200':
+          description: Threshold policy
+          content:
+            application/json:
+              schema:
+                $ref: ./governance.schemas.yaml#/components/schemas/ThresholdPolicyResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/threshold-policies/{policyId}/approve:
+    parameters:
+      - name: policyId
+        in: path
+        required: true
+        schema:
+          $ref: ./governance.schemas.yaml#/components/schemas/PolicyId
+    post:
+      operationId: approveThresholdPolicy
+      tags: [ThresholdPolicies]
+      summary: Approve a threshold policy for production binding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./governance.schemas.yaml#/components/schemas/ThresholdPolicyApprove
+      responses:
+        '200':
+          description: Policy approved
+          content:
+            application/json:
+              schema:
+                $ref: ./governance.schemas.yaml#/components/schemas/ThresholdPolicyResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/data-source-policies:
+    get:
+      operationId: listDataSourcePolicies
+      tags: [DataSourcePolicies]
+      summary: List data-source policies
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Data-source policies page
+          content:
+            application/json:
+              schema:
+                $ref: ./governance.schemas.yaml#/components/schemas/DataSourcePolicyListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createDataSourcePolicy
+      tags: [DataSourcePolicies]
+      summary: Create a data-source policy for a ledger
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./governance.schemas.yaml#/components/schemas/DataSourcePolicyCreate
+      responses:
+        '201':
+          description: Data-source policy created
+          content:
+            application/json:
+              schema:
+                $ref: ./governance.schemas.yaml#/components/schemas/DataSourcePolicyResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/data-source-policies/{policyId}:
+    parameters:
+      - name: policyId
+        in: path
+        required: true
+        schema:
+          $ref: ./governance.schemas.yaml#/components/schemas/DataSourcePolicyId
+    get:
+      operationId: getDataSourcePolicy
+      tags: [DataSourcePolicies]
+      summary: Get a data-source policy
+      responses:
+        '200':
+          description: Data-source policy
+          content:
+            application/json:
+              schema:
+                $ref: ./governance.schemas.yaml#/components/schemas/DataSourcePolicyResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

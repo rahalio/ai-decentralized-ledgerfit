@@ -1,0 +1,123 @@
+openapi: 3.1.0
+info:
+  title: Investigation schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    RevealRequestId:
+      type: string
+      minLength: 1
+    CaseNoteId:
+      type: string
+      minLength: 1
+    MaskedHitId:
+      type: string
+      minLength: 1
+    MaskedHit:
+      type: object
+      required: [id, ruleId, artefactId, maskedSubjectLabel, support, confidence]
+      properties:
+        id: { $ref: '#/components/schemas/MaskedHitId' }
+        ruleId: { type: string }
+        artefactId: { type: string }
+        maskedSubjectLabel: { type: string, description: Non-PHI placeholder label }
+        pharmacyMemberId: { type: [string, 'null'] }
+        support: { type: number }
+        confidence: { type: number }
+        gatewayNonOpioidTag: { type: boolean, default: false }
+        priority: { type: integer, minimum: 0 }
+    RevealRequest:
+      type: object
+      required: [id, hitId, status, requestedBy, requestedAt]
+      properties:
+        id: { $ref: '#/components/schemas/RevealRequestId' }
+        hitId: { $ref: '#/components/schemas/MaskedHitId' }
+        status: { type: string, enum: [pending, approved, denied, expired] }
+        requestedBy: { type: string }
+        approverId: { type: [string, 'null'] }
+        reason: { type: string }
+        requestedAt: { type: string, format: date-time }
+        resolvedAt: { type: [string, 'null'], format: date-time }
+        revealedPayload:
+          type: object
+          additionalProperties: true
+          description: Present only after dual-control approval
+    RevealRequestCreate:
+      type: object
+      required: [hitId, reason]
+      properties:
+        hitId: { $ref: '#/components/schemas/MaskedHitId' }
+        reason: { type: string }
+    RevealDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [approve, deny] }
+        note: { type: string }
+    CaseNote:
+      type: object
+      required: [id, hitId, body, authorId, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/CaseNoteId' }
+        hitId: { $ref: '#/components/schemas/MaskedHitId' }
+        body: { type: string }
+        authorId: { type: string }
+        createdAt: { type: string, format: date-time }
+    CaseNoteCreate:
+      type: object
+      required: [hitId, body]
+      properties:
+        hitId: { $ref: '#/components/schemas/MaskedHitId' }
+        body: { type: string }
+    MaskedHitListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MaskedHit' }
+    MaskedHitListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/MaskedHitListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    RevealRequestResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/RevealRequest' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    RevealRequestListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/RevealRequest' }
+    RevealRequestListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/RevealRequestListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    CaseNoteResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/CaseNote' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    CaseNoteListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CaseNote' }
+    CaseNoteListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/CaseNoteListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

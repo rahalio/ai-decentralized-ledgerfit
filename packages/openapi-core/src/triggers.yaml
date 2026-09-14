@@ -1,0 +1,147 @@
+openapi: 3.1.0
+info:
+  title: Smart Contract Triggers API
+  version: 0.1.0
+  description: |
+    Policy automation for train / score / tune lifecycle.
+  license:
+    name: Proprietary
+    url: https://ledgerfit.local/license
+  x-domain: trg
+servers:
+  - url: https://api.ledgerfit.local
+    description: Local / product API
+security:
+  - apiKey: []
+tags:
+  - name: SmartContractTriggers
+    description: Smart-contract style lifecycle triggers
+paths:
+  /v1/smart-contract-triggers:
+    get:
+      operationId: listSmartContractTriggers
+      tags: [SmartContractTriggers]
+      summary: List smart-contract triggers
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Triggers page
+          content:
+            application/json:
+              schema:
+                $ref: ./triggers.schemas.yaml#/components/schemas/SmartContractTriggerListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createSmartContractTrigger
+      tags: [SmartContractTriggers]
+      summary: Create a lifecycle trigger
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./triggers.schemas.yaml#/components/schemas/SmartContractTriggerCreate
+      responses:
+        '201':
+          description: Trigger created
+          content:
+            application/json:
+              schema:
+                $ref: ./triggers.schemas.yaml#/components/schemas/SmartContractTriggerResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/smart-contract-triggers/{triggerId}:
+    parameters:
+      - name: triggerId
+        in: path
+        required: true
+        schema:
+          $ref: ./triggers.schemas.yaml#/components/schemas/TriggerId
+    get:
+      operationId: getSmartContractTrigger
+      tags: [SmartContractTriggers]
+      summary: Get a trigger
+      responses:
+        '200':
+          description: Trigger
+          content:
+            application/json:
+              schema:
+                $ref: ./triggers.schemas.yaml#/components/schemas/SmartContractTriggerResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+    patch:
+      operationId: updateSmartContractTrigger
+      tags: [SmartContractTriggers]
+      summary: Update or pause/resume a trigger
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./triggers.schemas.yaml#/components/schemas/SmartContractTriggerUpdate
+      responses:
+        '200':
+          description: Trigger updated
+          content:
+            application/json:
+              schema:
+                $ref: ./triggers.schemas.yaml#/components/schemas/SmartContractTriggerResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/smart-contract-triggers/{triggerId}/fire:
+    parameters:
+      - name: triggerId
+        in: path
+        required: true
+        schema:
+          $ref: ./triggers.schemas.yaml#/components/schemas/TriggerId
+    post:
+      operationId: fireSmartContractTrigger
+      tags: [SmartContractTriggers]
+      summary: Manually fire a trigger (starts a linked job)
+      responses:
+        '200':
+          description: Trigger fired
+          content:
+            application/json:
+              schema:
+                $ref: ./triggers.schemas.yaml#/components/schemas/TriggerFireResultResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

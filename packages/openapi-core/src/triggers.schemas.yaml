@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info:
+  title: Triggers schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    TriggerId:
+      type: string
+      minLength: 1
+    TriggerCondition:
+      type: string
+      enum: [newBlocksThreshold, scheduleCron, policyManual, evaluationDrift]
+    ExecutionMode:
+      type: string
+      enum: [serverBatch, streaming]
+    LifecycleStep:
+      type: string
+      enum:
+        - modelInitialization
+        - modelTraining
+        - modelValidation
+        - modelScoring
+        - modelEvaluation
+        - modelSerialization
+        - modelCleanup
+    ArmThresholds:
+      type: object
+      required: [minSupport, minConfidence, maxItems]
+      properties:
+        minSupport: { type: number }
+        minConfidence: { type: number }
+        maxItems: { type: integer }
+    SmartContractTrigger:
+      type: object
+      required: [id, ledgerId, name, condition, lifecycleStep, enabled, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/TriggerId' }
+        ledgerId: { type: string }
+        name: { type: string }
+        condition: { $ref: '#/components/schemas/TriggerCondition' }
+        lifecycleStep: { $ref: '#/components/schemas/LifecycleStep' }
+        executionMode: { $ref: '#/components/schemas/ExecutionMode' }
+        algorithm: { type: string }
+        armThresholds: { $ref: '#/components/schemas/ArmThresholds' }
+        newBlocksThreshold: { type: integer, minimum: 1 }
+        cronExpression: { type: string }
+        enabled: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        lastFiredAt: { type: [string, 'null'], format: date-time }
+    SmartContractTriggerCreate:
+      type: object
+      required: [ledgerId, name, condition, lifecycleStep, executionMode, algorithm]
+      properties:
+        ledgerId: { type: string }
+        name: { type: string }
+        condition: { $ref: '#/components/schemas/TriggerCondition' }
+        lifecycleStep: { $ref: '#/components/schemas/LifecycleStep' }
+        executionMode: { $ref: '#/components/schemas/ExecutionMode' }
+        algorithm: { type: string }
+        armThresholds: { $ref: '#/components/schemas/ArmThresholds' }
+        newBlocksThreshold: { type: integer, minimum: 1 }
+        cronExpression: { type: string }
+        enabled: { type: boolean, default: true }
+    SmartContractTriggerUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        enabled: { type: boolean }
+        newBlocksThreshold: { type: integer, minimum: 1 }
+        cronExpression: { type: string }
+        armThresholds: { $ref: '#/components/schemas/ArmThresholds' }
+    TriggerFireResult:
+      type: object
+      required: [triggerId, jobId, firedAt]
+      properties:
+        triggerId: { $ref: '#/components/schemas/TriggerId' }
+        jobId: { type: string }
+        firedAt: { type: string, format: date-time }
+    SmartContractTriggerResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/SmartContractTrigger' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    SmartContractTriggerListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SmartContractTrigger' }
+    SmartContractTriggerListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/SmartContractTriggerListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    TriggerFireResultResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/TriggerFireResult' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

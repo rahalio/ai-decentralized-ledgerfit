@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: Training Jobs API
+  version: 0.1.0
+  description: |
+    Batch and streaming training / scoring jobs over ledger windows.
+  license:
+    name: Proprietary
+    url: https://ledgerfit.local/license
+  x-domain: trn
+servers:
+  - url: https://api.ledgerfit.local
+    description: Local / product API
+security:
+  - apiKey: []
+tags:
+  - name: TrainingJobs
+    description: Batch Server-Layer and Streaming-Layer jobs
+paths:
+  /v1/training-jobs:
+    get:
+      operationId: listTrainingJobs
+      tags: [TrainingJobs]
+      summary: List training and scoring jobs
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Jobs page
+          content:
+            application/json:
+              schema:
+                $ref: ./training.schemas.yaml#/components/schemas/TrainingJobListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createTrainingJob
+      tags: [TrainingJobs]
+      summary: Create a ledger-window training or scoring job
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./training.schemas.yaml#/components/schemas/TrainingJobCreate
+      responses:
+        '201':
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: ./training.schemas.yaml#/components/schemas/TrainingJobResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/training-jobs/{jobId}:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          $ref: ./training.schemas.yaml#/components/schemas/JobId
+    get:
+      operationId: getTrainingJob
+      tags: [TrainingJobs]
+      summary: Get a training job by id
+      responses:
+        '200':
+          description: Training job
+          content:
+            application/json:
+              schema:
+                $ref: ./training.schemas.yaml#/components/schemas/TrainingJobResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/training-jobs/{jobId}/cancel:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          $ref: ./training.schemas.yaml#/components/schemas/JobId
+    post:
+      operationId: cancelTrainingJob
+      tags: [TrainingJobs]
+      summary: Cancel a queued or running job
+      responses:
+        '200':
+          description: Job cancelled
+          content:
+            application/json:
+              schema:
+                $ref: ./training.schemas.yaml#/components/schemas/TrainingJobResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

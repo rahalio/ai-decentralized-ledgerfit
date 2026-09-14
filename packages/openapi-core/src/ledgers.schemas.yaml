@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  title: Ledgers schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    LedgerId:
+      type: string
+      minLength: 1
+    MemberId:
+      type: string
+      minLength: 1
+    EventRefId:
+      type: string
+      minLength: 1
+    FreezeOrderId:
+      type: string
+      minLength: 1
+
+    LedgerNetwork:
+      type: object
+      required: [id, name, fabricType, permissioned, status, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/LedgerId' }
+        name: { type: string }
+        fabricType: { type: string, description: 'e.g. kaleido, hyperledger, quorum' }
+        permissioned: { type: boolean, enum: [true] }
+        consensusHint: { type: string }
+        status: { type: string, enum: [active, suspended, retired] }
+        createdAt: { type: string, format: date-time }
+
+    LedgerNetworkCreate:
+      type: object
+      required: [name, fabricType]
+      properties:
+        name: { type: string }
+        fabricType: { type: string }
+        consensusHint: { type: string }
+        endpointRef: { type: string, description: Opaque connector reference }
+
+    PharmacyMember:
+      type: object
+      required: [id, ledgerId, displayName, status]
+      properties:
+        id: { $ref: '#/components/schemas/MemberId' }
+        ledgerId: { $ref: '#/components/schemas/LedgerId' }
+        displayName: { type: string }
+        externalSiteCode: { type: string }
+        status: { type: string, enum: [pending, active, frozen, revoked] }
+        frozenAt: { type: [string, 'null'], format: date-time }
+
+    PharmacyMemberCreate:
+      type: object
+      required: [displayName]
+      properties:
+        displayName: { type: string }
+        externalSiteCode: { type: string }
+
+    PrescriptionEventRef:
+      type: object
+      required: [id, ledgerId, pharmacyMemberId, contentHash, anchoredAt]
+      properties:
+        id: { $ref: '#/components/schemas/EventRefId' }
+        ledgerId: { $ref: '#/components/schemas/LedgerId' }
+        pharmacyMemberId: { $ref: '#/components/schemas/MemberId' }
+        blockHeight: { type: integer, minimum: 0 }
+        txId: { type: string }
+        contentHash: { type: string }
+        drugClassHints:
+          type: array
+          items: { type: string }
+        anchoredAt: { type: string, format: date-time }
+
+    PrescriptionEventRefCreate:
+      type: object
+      required: [pharmacyMemberId, contentHash]
+      properties:
+        pharmacyMemberId: { $ref: '#/components/schemas/MemberId' }
+        contentHash: { type: string }
+        drugClassHints:
+          type: array
+          items: { type: string }
+        occurredAt: { type: string, format: date-time }
+
+    FreezeOrder:
+      type: object
+      required: [id, memberId, ledgerId, reason, status, issuedAt, slaDeadline]
+      properties:
+        id: { $ref: '#/components/schemas/FreezeOrderId' }
+        memberId: { $ref: '#/components/schemas/MemberId' }
+        ledgerId: { $ref: '#/components/schemas/LedgerId' }
+        reason: { type: string }
+        status: { type: string, enum: [active, acknowledged, released] }
+        issuedAt: { type: string, format: date-time }
+        slaDeadline: { type: string, format: date-time }
+        acknowledgedAt: { type: [string, 'null'], format: date-time }
+        releasedAt: { type: [string, 'null'], format: date-time }
+
+    FreezeOrderCreate:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string }
+        freezeAnchoring: { type: boolean, default: true }
+        freezeScoring: { type: boolean, default: true }
+        slaHours: { type: integer, minimum: 1, default: 24 }
+
+    LedgerNetworkResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/LedgerNetwork' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+
+    LedgerNetworkListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/LedgerNetwork' }
+
+    LedgerNetworkListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/LedgerNetworkListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+
+    PharmacyMemberResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/PharmacyMember' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+
+    PharmacyMemberListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/PharmacyMember' }
+
+    PharmacyMemberListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/PharmacyMemberListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+
+    PrescriptionEventRefResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/PrescriptionEventRef' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+
+    PrescriptionEventRefListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/PrescriptionEventRef' }
+
+    PrescriptionEventRefListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/PrescriptionEventRefListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+
+    FreezeOrderResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/FreezeOrder' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+
+    FreezeOrderListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/FreezeOrder' }
+
+    FreezeOrderListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/FreezeOrderListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

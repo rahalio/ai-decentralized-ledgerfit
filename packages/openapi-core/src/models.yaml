@@ -1,0 +1,157 @@
+openapi: 3.1.0
+info:
+  title: Model Artefacts API
+  version: 0.1.0
+  description: |
+    Versioned association and risk model artefacts and promotion.
+  license:
+    name: Proprietary
+    url: https://ledgerfit.local/license
+  x-domain: mdl
+servers:
+  - url: https://api.ledgerfit.local
+    description: Local / product API
+security:
+  - apiKey: []
+tags:
+  - name: ModelArtefacts
+    description: Model artefacts and association rules
+paths:
+  /v1/model-artefacts:
+    get:
+      operationId: listModelArtefacts
+      tags: [ModelArtefacts]
+      summary: List model artefacts
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Artefacts page
+          content:
+            application/json:
+              schema:
+                $ref: ./models.schemas.yaml#/components/schemas/ModelArtefactListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: registerModelArtefact
+      tags: [ModelArtefacts]
+      summary: Register a model artefact from a completed job
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./models.schemas.yaml#/components/schemas/ModelArtefactCreate
+      responses:
+        '201':
+          description: Artefact registered
+          content:
+            application/json:
+              schema:
+                $ref: ./models.schemas.yaml#/components/schemas/ModelArtefactResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/model-artefacts/{artefactId}:
+    parameters:
+      - name: artefactId
+        in: path
+        required: true
+        schema:
+          $ref: ./models.schemas.yaml#/components/schemas/ArtefactId
+    get:
+      operationId: getModelArtefact
+      tags: [ModelArtefacts]
+      summary: Get a model artefact
+      responses:
+        '200':
+          description: Model artefact
+          content:
+            application/json:
+              schema:
+                $ref: ./models.schemas.yaml#/components/schemas/ModelArtefactResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/model-artefacts/{artefactId}/promote:
+    parameters:
+      - name: artefactId
+        in: path
+        required: true
+        schema:
+          $ref: ./models.schemas.yaml#/components/schemas/ArtefactId
+    post:
+      operationId: promoteModelArtefact
+      tags: [ModelArtefacts]
+      summary: Promote or quarantine a model artefact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./models.schemas.yaml#/components/schemas/ModelPromotionRequest
+      responses:
+        '200':
+          description: Artefact promotion updated
+          content:
+            application/json:
+              schema:
+                $ref: ./models.schemas.yaml#/components/schemas/ModelArtefactResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/model-artefacts/{artefactId}/rules:
+    parameters:
+      - name: artefactId
+        in: path
+        required: true
+        schema:
+          $ref: ./models.schemas.yaml#/components/schemas/ArtefactId
+    get:
+      operationId: listAssociationRules
+      tags: [ModelArtefacts]
+      summary: List association rules for an artefact (identifiers masked)
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Rules page
+          content:
+            application/json:
+              schema:
+                $ref: ./models.schemas.yaml#/components/schemas/AssociationRuleListResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

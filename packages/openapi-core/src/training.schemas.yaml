@@ -1,0 +1,96 @@
+openapi: 3.1.0
+info:
+  title: Training schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    JobId:
+      type: string
+      minLength: 1
+    JobStatus:
+      type: string
+      enum: [queued, running, succeeded, failed, cancelled]
+    ExecutionMode:
+      type: string
+      enum: [serverBatch, streaming]
+      description: Server Layer (SMP/MPP batch) vs Streaming Layer
+    LifecycleStep:
+      type: string
+      enum:
+        - modelInitialization
+        - modelTraining
+        - modelValidation
+        - modelScoring
+        - modelEvaluation
+        - modelSerialization
+        - modelCleanup
+    ArmThresholds:
+      type: object
+      required: [minSupport, minConfidence, maxItems]
+      properties:
+        minSupport: { type: number, minimum: 0, maximum: 1, default: 0.2 }
+        minConfidence: { type: number, minimum: 0, maximum: 1, default: 0.7 }
+        maxItems: { type: integer, minimum: 1, maximum: 10, default: 3 }
+    LedgerWindow:
+      type: object
+      required: [ledgerId]
+      properties:
+        ledgerId: { type: string }
+        fromBlock: { type: integer, minimum: 0 }
+        toBlock: { type: integer, minimum: 0 }
+        fromTime: { type: string, format: date-time }
+        toTime: { type: string, format: date-time }
+    TrainingJob:
+      type: object
+      required: [id, ledgerId, executionMode, lifecycleStep, status, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/JobId' }
+        ledgerId: { type: string }
+        executionMode: { $ref: '#/components/schemas/ExecutionMode' }
+        lifecycleStep: { $ref: '#/components/schemas/LifecycleStep' }
+        algorithm:
+          type: string
+          enum: [associationRuleMining, riskScore, custom]
+        armThresholds: { $ref: '#/components/schemas/ArmThresholds' }
+        ledgerWindow: { $ref: '#/components/schemas/LedgerWindow' }
+        triggerId: { type: [string, 'null'] }
+        thresholdPolicyId: { type: [string, 'null'] }
+        status: { $ref: '#/components/schemas/JobStatus' }
+        artefactId: { type: [string, 'null'] }
+        errorDetail: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        completedAt: { type: [string, 'null'], format: date-time }
+    TrainingJobCreate:
+      type: object
+      required: [ledgerId, executionMode, lifecycleStep, algorithm]
+      properties:
+        ledgerId: { type: string }
+        executionMode: { $ref: '#/components/schemas/ExecutionMode' }
+        lifecycleStep: { $ref: '#/components/schemas/LifecycleStep' }
+        algorithm:
+          type: string
+          enum: [associationRuleMining, riskScore, custom]
+        armThresholds: { $ref: '#/components/schemas/ArmThresholds' }
+        ledgerWindow: { $ref: '#/components/schemas/LedgerWindow' }
+        triggerId: { type: string }
+        thresholdPolicyId: { type: string }
+    TrainingJobResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/TrainingJob' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    TrainingJobListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TrainingJob' }
+    TrainingJobListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/TrainingJobListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

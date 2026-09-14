@@ -1,0 +1,95 @@
+openapi: 3.1.0
+info:
+  title: Provenance API
+  version: 0.1.0
+  description: |
+    Immutable lineage from ledger events to models and audit exports.
+  license:
+    name: Proprietary
+    url: https://ledgerfit.local/license
+  x-domain: prv
+servers:
+  - url: https://api.ledgerfit.local
+    description: Local / product API
+security:
+  - apiKey: []
+tags:
+  - name: Provenance
+    description: Lineage records and regulator audit packs
+paths:
+  /v1/provenance:
+    get:
+      operationId: listProvenanceRecords
+      tags: [Provenance]
+      summary: List provenance records
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Provenance page
+          content:
+            application/json:
+              schema:
+                $ref: ./provenance.schemas.yaml#/components/schemas/ProvenanceRecordListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/provenance/{recordId}:
+    parameters:
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          $ref: ./provenance.schemas.yaml#/components/schemas/RecordId
+    get:
+      operationId: getProvenanceRecord
+      tags: [Provenance]
+      summary: Get a provenance record
+      responses:
+        '200':
+          description: Provenance record
+          content:
+            application/json:
+              schema:
+                $ref: ./provenance.schemas.yaml#/components/schemas/ProvenanceRecordResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/provenance/export:
+    post:
+      operationId: exportProvenanceAuditPack
+      tags: [Provenance]
+      summary: Export a PHI-light provenance audit pack
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./provenance.schemas.yaml#/components/schemas/ProvenanceExportRequest
+      responses:
+        '201':
+          description: Audit pack metadata and download reference
+          content:
+            application/json:
+              schema:
+                $ref: ./provenance.schemas.yaml#/components/schemas/ProvenanceExportResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

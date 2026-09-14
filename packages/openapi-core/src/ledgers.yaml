@@ -1,0 +1,324 @@
+openapi: 3.1.0
+info:
+  title: Ledgers API
+  version: 0.1.0
+  description: |
+    Permissioned ledger networks, pharmacy members, event anchors, and site freeze.
+  license:
+    name: Proprietary
+    url: https://ledgerfit.local/license
+  x-domain: ldg
+servers:
+  - url: https://api.ledgerfit.local
+    description: Local / product API
+security:
+  - apiKey: []
+tags:
+  - name: Ledgers
+    description: Permissioned ledger networks
+  - name: Members
+    description: Pharmacy members on a ledger
+  - name: Events
+    description: Anchored prescription event references
+  - name: Freeze
+    description: Site freeze without history erase
+paths:
+  /v1/ledgers:
+    get:
+      operationId: listLedgers
+      tags: [Ledgers]
+      summary: List registered permissioned ledger networks
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Ledger networks page
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/LedgerNetworkListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: registerLedger
+      tags: [Ledgers]
+      summary: Register a permissioned ledger as a trusted data source
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./ledgers.schemas.yaml#/components/schemas/LedgerNetworkCreate
+      responses:
+        '201':
+          description: Ledger registered
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/LedgerNetworkResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/ledgers/{ledgerId}:
+    parameters:
+      - name: ledgerId
+        in: path
+        required: true
+        schema:
+          $ref: ./ledgers.schemas.yaml#/components/schemas/LedgerId
+    get:
+      operationId: getLedger
+      tags: [Ledgers]
+      summary: Get a ledger network by id
+      responses:
+        '200':
+          description: Ledger network
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/LedgerNetworkResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/ledgers/{ledgerId}/members:
+    parameters:
+      - name: ledgerId
+        in: path
+        required: true
+        schema:
+          $ref: ./ledgers.schemas.yaml#/components/schemas/LedgerId
+    get:
+      operationId: listPharmacyMembers
+      tags: [Members]
+      summary: List pharmacy members on a ledger
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Members page
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/PharmacyMemberListResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+    post:
+      operationId: addPharmacyMember
+      tags: [Members]
+      summary: Add an approved pharmacy member
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./ledgers.schemas.yaml#/components/schemas/PharmacyMemberCreate
+      responses:
+        '201':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/PharmacyMemberResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/ledgers/{ledgerId}/events:
+    parameters:
+      - name: ledgerId
+        in: path
+        required: true
+        schema:
+          $ref: ./ledgers.schemas.yaml#/components/schemas/LedgerId
+    get:
+      operationId: listPrescriptionEventRefs
+      tags: [Events]
+      summary: List anchored prescription event references
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Event refs page
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/PrescriptionEventRefListResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+    post:
+      operationId: anchorPrescriptionEvent
+      tags: [Events]
+      summary: Anchor a prescription event hash on the permissioned ledger
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./ledgers.schemas.yaml#/components/schemas/PrescriptionEventRefCreate
+      responses:
+        '201':
+          description: Event anchored
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/PrescriptionEventRefResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/members/{memberId}/freeze:
+    parameters:
+      - name: memberId
+        in: path
+        required: true
+        schema:
+          $ref: ./ledgers.schemas.yaml#/components/schemas/MemberId
+    post:
+      operationId: freezePharmacyMember
+      tags: [Freeze]
+      summary: Freeze outbound anchoring and scoring for a pharmacy member
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./ledgers.schemas.yaml#/components/schemas/FreezeOrderCreate
+      responses:
+        '201':
+          description: Freeze issued
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/FreezeOrderResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/freeze-orders:
+    get:
+      operationId: listFreezeOrders
+      tags: [Freeze]
+      summary: List site freeze orders
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Freeze orders page
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/FreezeOrderListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+  /v1/freeze-orders/{freezeOrderId}/acknowledge:
+    parameters:
+      - name: freezeOrderId
+        in: path
+        required: true
+        schema:
+          $ref: ./ledgers.schemas.yaml#/components/schemas/FreezeOrderId
+    post:
+      operationId: acknowledgeFreezeOrder
+      tags: [Freeze]
+      summary: Acknowledge an active freeze order
+      responses:
+        '200':
+          description: Freeze acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/FreezeOrderResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/freeze-orders/{freezeOrderId}/release:
+    parameters:
+      - name: freezeOrderId
+        in: path
+        required: true
+        schema:
+          $ref: ./ledgers.schemas.yaml#/components/schemas/FreezeOrderId
+    post:
+      operationId: releaseFreezeOrder
+      tags: [Freeze]
+      summary: Release a freeze with dual-control acknowledgement
+      responses:
+        '200':
+          description: Freeze released
+          content:
+            application/json:
+              schema:
+                $ref: ./ledgers.schemas.yaml#/components/schemas/FreezeOrderResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

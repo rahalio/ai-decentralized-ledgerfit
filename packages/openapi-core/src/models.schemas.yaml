@@ -1,0 +1,106 @@
+openapi: 3.1.0
+info:
+  title: Models schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ArtefactId:
+      type: string
+      minLength: 1
+    RuleId:
+      type: string
+      minLength: 1
+    PromotionState:
+      type: string
+      enum: [experimental, staging, production, rejected, quarantinedSynthetic]
+    ArmThresholds:
+      type: object
+      required: [minSupport, minConfidence, maxItems]
+      properties:
+        minSupport: { type: number, minimum: 0, maximum: 1 }
+        minConfidence: { type: number, minimum: 0, maximum: 1 }
+        maxItems: { type: integer, minimum: 1, maximum: 10 }
+    ModelArtefact:
+      type: object
+      required: [id, ledgerId, jobId, algorithm, contentDigest, promotionState, dataLabel, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/ArtefactId' }
+        ledgerId: { type: string }
+        jobId: { type: string }
+        algorithm: { type: string }
+        contentDigest: { type: string }
+        promotionState: { $ref: '#/components/schemas/PromotionState' }
+        dataLabel: { type: string, enum: [synthetic, production] }
+        armThresholds: { $ref: '#/components/schemas/ArmThresholds' }
+        thresholdPolicyId: { type: [string, 'null'] }
+        ruleCount: { type: integer, minimum: 0 }
+        metrics: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+        promotedAt: { type: [string, 'null'], format: date-time }
+    ModelArtefactCreate:
+      type: object
+      required: [ledgerId, jobId, algorithm, contentDigest, dataLabel]
+      properties:
+        ledgerId: { type: string }
+        jobId: { type: string }
+        algorithm: { type: string }
+        contentDigest: { type: string }
+        dataLabel: { type: string, enum: [synthetic, production] }
+        armThresholds: { $ref: '#/components/schemas/ArmThresholds' }
+        thresholdPolicyId: { type: string }
+        ruleCount: { type: integer }
+        metrics: { type: object, additionalProperties: true }
+    ModelPromotionRequest:
+      type: object
+      required: [approverNote]
+      properties:
+        approverNote: { type: string }
+        dualControlToken: { type: string }
+    AssociationRule:
+      type: object
+      required: [id, artefactId, antecedents, consequents, support, confidence]
+      properties:
+        id: { $ref: '#/components/schemas/RuleId' }
+        artefactId: { $ref: '#/components/schemas/ArtefactId' }
+        antecedents:
+          type: array
+          items: { type: string }
+        consequents:
+          type: array
+          items: { type: string }
+        support: { type: number }
+        confidence: { type: number }
+        lift: { type: [number, 'null'] }
+    ModelArtefactResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ModelArtefact' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    ModelArtefactListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ModelArtefact' }
+    ModelArtefactListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ModelArtefactListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    AssociationRuleListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AssociationRule' }
+    AssociationRuleListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/AssociationRuleListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }

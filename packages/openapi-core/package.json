@@ -1,0 +1,18 @@
+{
+  "name": "@ledgerfit/openapi-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAPI contracts for Ledgerfit (common + identity + product domains)",
+  "scripts": {
+    "lint:domains": "redocly lint",
+    "bundle:domains": "mkdir -p src/.bundled && redocly bundle identity --output src/.bundled/identity.openapi.yaml && redocly bundle identity --output src/.bundled/identity.json && redocly bundle ledgers --output src/.bundled/ledgers.openapi.yaml && redocly bundle ledgers --output src/.bundled/ledgers.json && redocly bundle training --output src/.bundled/training.openapi.yaml && redocly bundle training --output src/.bundled/training.json && redocly bundle models --output src/.bundled/models.openapi.yaml && redocly bundle models --output src/.bundled/models.json && redocly bundle triggers --output src/.bundled/triggers.openapi.yaml && redocly bundle triggers --output src/.bundled/triggers.json && redocly bundle provenance --output src/.bundled/provenance.openapi.yaml && redocly bundle provenance --output src/.bundled/provenance.json && redocly bundle investigation --output src/.bundled/investigation.openapi.yaml && redocly bundle investigation --output src/.bundled/investigation.json && redocly bundle governance --output src/.bundled/governance.openapi.yaml && redocly bundle governance --output src/.bundled/governance.json",
+    "lint": "pnpm run lint:domains",
+    "bundle": "pnpm run bundle:domains"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.34.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

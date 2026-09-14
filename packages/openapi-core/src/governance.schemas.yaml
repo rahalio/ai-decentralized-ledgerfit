@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Governance schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    PolicyId:
+      type: string
+      minLength: 1
+    DataSourcePolicyId:
+      type: string
+      minLength: 1
+    ArmThresholds:
+      type: object
+      required: [minSupport, minConfidence, maxItems]
+      properties:
+        minSupport: { type: number, minimum: 0, maximum: 1, default: 0.2 }
+        minConfidence: { type: number, minimum: 0, maximum: 1, default: 0.7 }
+        maxItems: { type: integer, minimum: 1, maximum: 10, default: 3 }
+    ThresholdPolicy:
+      type: object
+      required: [id, version, thresholds, status, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/PolicyId' }
+        version: { type: integer, minimum: 1 }
+        name: { type: string }
+        thresholds: { $ref: '#/components/schemas/ArmThresholds' }
+        status: { type: string, enum: [draft, pendingApproval, approved, superseded] }
+        createdBy: { type: string }
+        approvedBy: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        approvedAt: { type: [string, 'null'], format: date-time }
+    ThresholdPolicyCreate:
+      type: object
+      required: [name, thresholds]
+      properties:
+        name: { type: string }
+        thresholds: { $ref: '#/components/schemas/ArmThresholds' }
+    ThresholdPolicyApprove:
+      type: object
+      required: [approverNote]
+      properties:
+        approverNote: { type: string }
+    DataSourcePolicy:
+      type: object
+      required: [id, ledgerId, allowPublicChain, allowSyntheticProduction, status]
+      properties:
+        id: { $ref: '#/components/schemas/DataSourcePolicyId' }
+        ledgerId: { type: string }
+        allowPublicChain: { type: boolean, enum: [false] }
+        allowSyntheticProduction: { type: boolean, enum: [false] }
+        requirePermissioned: { type: boolean, enum: [true] }
+        status: { type: string, enum: [active, retired] }
+        notes: { type: string }
+    DataSourcePolicyCreate:
+      type: object
+      required: [ledgerId]
+      properties:
+        ledgerId: { type: string }
+        notes: { type: string }
+    ThresholdPolicyResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ThresholdPolicy' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    ThresholdPolicyListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ThresholdPolicy' }
+    ThresholdPolicyListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ThresholdPolicyListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    DataSourcePolicyResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/DataSourcePolicy' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
+    DataSourcePolicyListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/DataSourcePolicy' }
+    DataSourcePolicyListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/DataSourcePolicyListData' }
+        meta: { $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta }
