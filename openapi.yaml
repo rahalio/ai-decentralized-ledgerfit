@@ -1,0 +1,1461 @@
+openapi: 3.0.3
+info:
+  title: Ledgerfit
+  version: 0.1.0
+  description: >-
+    Permissioned-ledger ML control plane for multi-pharmacy controlled-substance
+    surveillance: train association and risk models from immutable prescription
+    events with smart-contract-triggered retrain and score cycles.
+  x-product-slug: ai-decentralized-ledgerfit
+  x-source: ai-in-decentralized+ai/2019-03-blockchain-ml-taowang-v2-190322201510/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: LedgersDataSources
+    description: Permissioned ledger networks, pharmacy members, and event sources
+  - name: TrainingJobs
+    description: Batch Server-Layer and Streaming-Layer training / scoring jobs
+  - name: ModelArtefacts
+    description: Versioned association and risk model artefacts and promotion
+  - name: SmartContractTriggers
+    description: Policy automation for train / score / tune lifecycle
+  - name: Provenance
+    description: Immutable lineage from ledger events to models and decisions
+paths:
+  /v1/ledgers:
+    get:
+      operationId: listLedgers
+      tags: [LedgersDataSources]
+      summary: List registered permissioned ledger networks
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Ledger networks page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeLedgerNetwork"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: registerLedger
+      tags: [LedgersDataSources]
+      summary: Register a permissioned ledger as a trusted data source
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LedgerNetworkCreate"
+      responses:
+        "201":
+          description: Ledger registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeLedgerNetwork"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/ledgers/{ledgerId}:
+    parameters:
+      - $ref: "#/components/parameters/LedgerId"
+    get:
+      operationId: getLedger
+      tags: [LedgersDataSources]
+      summary: Get a ledger network by id
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Ledger network
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeLedgerNetwork"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/ledgers/{ledgerId}/members:
+    parameters:
+      - $ref: "#/components/parameters/LedgerId"
+    get:
+      operationId: listPharmacyMembers
+      tags: [LedgersDataSources]
+      summary: List pharmacy members on a ledger
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Members page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopePharmacyMember"
+    post:
+      operationId: addPharmacyMember
+      tags: [LedgersDataSources]
+      summary: Add an approved pharmacy member
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PharmacyMemberCreate"
+      responses:
+        "201":
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopePharmacyMember"
+
+  /v1/ledgers/{ledgerId}/events:
+    parameters:
+      - $ref: "#/components/parameters/LedgerId"
+    get:
+      operationId: listPrescriptionEventRefs
+      tags: [LedgersDataSources]
+      summary: List ledger-anchored prescription event references
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: pharmacyMemberId
+          in: query
+          schema:
+            type: string
+        - name: fromBlock
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: toBlock
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Event references page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopePrescriptionEventRef"
+    post:
+      operationId: anchorPrescriptionEvent
+      tags: [LedgersDataSources]
+      summary: Anchor a prescription event hash or pointer on the ledger
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrescriptionEventRefCreate"
+      responses:
+        "201":
+          description: Event anchored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopePrescriptionEventRef"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/training-jobs:
+    get:
+      operationId: listTrainingJobs
+      tags: [TrainingJobs]
+      summary: List batch and streaming training / scoring jobs
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: ledgerId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/JobStatus"
+        - name: executionMode
+          in: query
+          schema:
+            $ref: "#/components/schemas/ExecutionMode"
+      responses:
+        "200":
+          description: Jobs page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeTrainingJob"
+    post:
+      operationId: createTrainingJob
+      tags: [TrainingJobs]
+      summary: Create a Server-Layer batch or Streaming-Layer job
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingJobCreate"
+      responses:
+        "201":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeTrainingJob"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          description: Data source is not a registered permissioned ledger
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /v1/training-jobs/{jobId}:
+    parameters:
+      - $ref: "#/components/parameters/JobId"
+    get:
+      operationId: getTrainingJob
+      tags: [TrainingJobs]
+      summary: Get training job status and lineage
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Training job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeTrainingJob"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/training-jobs/{jobId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/JobId"
+    post:
+      operationId: cancelTrainingJob
+      tags: [TrainingJobs]
+      summary: Cancel a queued or running job
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Job cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeTrainingJob"
+        "409":
+          description: Job not cancellable
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /v1/model-artefacts:
+    get:
+      operationId: listModelArtefacts
+      tags: [ModelArtefacts]
+      summary: List model artefacts
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: ledgerId
+          in: query
+          schema:
+            type: string
+        - name: promotionState
+          in: query
+          schema:
+            $ref: "#/components/schemas/PromotionState"
+      responses:
+        "200":
+          description: Artefacts page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeModelArtefact"
+    post:
+      operationId: registerModelArtefact
+      tags: [ModelArtefacts]
+      summary: Register a model artefact produced by a training job
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelArtefactCreate"
+      responses:
+        "201":
+          description: Artefact registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeModelArtefact"
+
+  /v1/model-artefacts/{artefactId}:
+    parameters:
+      - $ref: "#/components/parameters/ArtefactId"
+    get:
+      operationId: getModelArtefact
+      tags: [ModelArtefacts]
+      summary: Get a model artefact
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Model artefact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeModelArtefact"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/model-artefacts/{artefactId}/promote:
+    parameters:
+      - $ref: "#/components/parameters/ArtefactId"
+    post:
+      operationId: promoteModelArtefact
+      tags: [ModelArtefacts]
+      summary: Promote an artefact to production surveillance use
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelPromotionRequest"
+      responses:
+        "200":
+          description: Artefact promoted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeModelArtefact"
+        "422":
+          description: Synthetic-only or incomplete provenance blocked promotion
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /v1/model-artefacts/{artefactId}/rules:
+    parameters:
+      - $ref: "#/components/parameters/ArtefactId"
+    get:
+      operationId: listAssociationRules
+      tags: [ModelArtefacts]
+      summary: List association rules from an ARM artefact (identifiers masked)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: minSupport
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1
+        - name: minConfidence
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1
+      responses:
+        "200":
+          description: Rules page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeAssociationRule"
+
+  /v1/smart-contract-triggers:
+    get:
+      operationId: listSmartContractTriggers
+      tags: [SmartContractTriggers]
+      summary: List lifecycle automation triggers
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: ledgerId
+          in: query
+          schema:
+            type: string
+        - name: enabled
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Triggers page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeSmartContractTrigger"
+    post:
+      operationId: createSmartContractTrigger
+      tags: [SmartContractTriggers]
+      summary: Create a policy trigger for train / score / tune
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmartContractTriggerCreate"
+      responses:
+        "201":
+          description: Trigger created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeSmartContractTrigger"
+
+  /v1/smart-contract-triggers/{triggerId}:
+    parameters:
+      - $ref: "#/components/parameters/TriggerId"
+    get:
+      operationId: getSmartContractTrigger
+      tags: [SmartContractTriggers]
+      summary: Get a smart-contract trigger
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Trigger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeSmartContractTrigger"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateSmartContractTrigger
+      tags: [SmartContractTriggers]
+      summary: Enable, disable, or revise trigger policy
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmartContractTriggerPatch"
+      responses:
+        "200":
+          description: Trigger updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeSmartContractTrigger"
+
+  /v1/smart-contract-triggers/{triggerId}/fire:
+    parameters:
+      - $ref: "#/components/parameters/TriggerId"
+    post:
+      operationId: fireSmartContractTrigger
+      tags: [SmartContractTriggers]
+      summary: Manually fire a trigger (still recorded in provenance)
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        "202":
+          description: Trigger accepted; job enqueued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeTrainingJob"
+
+  /v1/provenance:
+    get:
+      operationId: listProvenanceRecords
+      tags: [Provenance]
+      summary: Query provenance records
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: ledgerId
+          in: query
+          schema:
+            type: string
+        - name: artefactId
+          in: query
+          schema:
+            type: string
+        - name: jobId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Provenance page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeProvenanceRecord"
+
+  /v1/provenance/{recordId}:
+    parameters:
+      - $ref: "#/components/parameters/RecordId"
+    get:
+      operationId: getProvenanceRecord
+      tags: [Provenance]
+      summary: Get a provenance record
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Provenance record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeProvenanceRecord"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/provenance/export:
+    post:
+      operationId: exportProvenanceAuditPack
+      tags: [Provenance]
+      summary: Export audit pack for regulator or external auditor
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProvenanceExportRequest"
+      responses:
+        "200":
+          description: Audit pack metadata and download reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeProvenanceExport"
+
+  /v1/members/{memberId}/freeze:
+    parameters:
+      - $ref: "#/components/parameters/MemberId"
+    post:
+      operationId: freezePharmacyMember
+      tags: [LedgersDataSources]
+      summary: Freeze outbound anchoring and scoring for a pharmacy member
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreezeOrderCreate"
+      responses:
+        "201":
+          description: Freeze issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeFreezeOrder"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    LedgerId:
+      name: ledgerId
+      in: path
+      required: true
+      schema:
+        type: string
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+    ArtefactId:
+      name: artefactId
+      in: path
+      required: true
+      schema:
+        type: string
+    TriggerId:
+      name: triggerId
+      in: path
+      required: true
+      schema:
+        type: string
+    RecordId:
+      name: recordId
+      in: path
+      required: true
+      schema:
+        type: string
+    MemberId:
+      name: memberId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+  schemas:
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+
+    JobStatus:
+      type: string
+      enum: [queued, running, succeeded, failed, cancelled]
+
+    ExecutionMode:
+      type: string
+      enum: [serverBatch, streaming]
+      description: Server Layer (SMP/MPP batch) vs Streaming Layer (online / incremental)
+
+    LifecycleStep:
+      type: string
+      enum:
+        - modelInitialization
+        - modelTraining
+        - modelValidation
+        - modelScoring
+        - modelEvaluation
+        - modelSerialization
+        - modelCleanup
+
+    PromotionState:
+      type: string
+      enum: [experimental, staging, production, rejected, quarantinedSynthetic]
+
+    TriggerCondition:
+      type: string
+      enum:
+        - newBlocksThreshold
+        - scheduleCron
+        - policyManual
+        - evaluationDrift
+
+    LedgerNetwork:
+      type: object
+      required: [id, name, fabricType, permissioned, status, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        fabricType:
+          type: string
+          description: e.g. kaleido, hyperledger, quorum
+        permissioned:
+          type: boolean
+          enum: [true]
+        consensusHint:
+          type: string
+          description: e.g. raft, proof-of-authority
+        status:
+          type: string
+          enum: [active, suspended, retired]
+        createdAt:
+          type: string
+          format: date-time
+
+    LedgerNetworkCreate:
+      type: object
+      required: [name, fabricType]
+      properties:
+        name:
+          type: string
+        fabricType:
+          type: string
+        consensusHint:
+          type: string
+        endpointRef:
+          type: string
+          description: Opaque connector reference; not a public RPC URL for PHI chains
+
+    PharmacyMember:
+      type: object
+      required: [id, ledgerId, displayName, status]
+      properties:
+        id:
+          type: string
+        ledgerId:
+          type: string
+        displayName:
+          type: string
+        externalSiteCode:
+          type: string
+        status:
+          type: string
+          enum: [pending, active, frozen, revoked]
+        frozenAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    PharmacyMemberCreate:
+      type: object
+      required: [displayName]
+      properties:
+        displayName:
+          type: string
+        externalSiteCode:
+          type: string
+
+    PrescriptionEventRef:
+      type: object
+      required: [id, ledgerId, pharmacyMemberId, contentHash, anchoredAt]
+      properties:
+        id:
+          type: string
+        ledgerId:
+          type: string
+        pharmacyMemberId:
+          type: string
+        blockHeight:
+          type: integer
+          minimum: 0
+        txId:
+          type: string
+        contentHash:
+          type: string
+          description: Hash of prescription payload or canonical event
+        drugClassHints:
+          type: array
+          items:
+            type: string
+          description: Non-PHI schedule / class tags for filtering
+        anchoredAt:
+          type: string
+          format: date-time
+
+    PrescriptionEventRefCreate:
+      type: object
+      required: [pharmacyMemberId, contentHash]
+      properties:
+        pharmacyMemberId:
+          type: string
+        contentHash:
+          type: string
+        drugClassHints:
+          type: array
+          items:
+            type: string
+        occurredAt:
+          type: string
+          format: date-time
+
+    ArmThresholds:
+      type: object
+      required: [minSupport, minConfidence, maxItems]
+      properties:
+        minSupport:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.2
+        minConfidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.7
+        maxItems:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 3
+
+    LedgerWindow:
+      type: object
+      required: [ledgerId]
+      properties:
+        ledgerId:
+          type: string
+        fromBlock:
+          type: integer
+          minimum: 0
+        toBlock:
+          type: integer
+          minimum: 0
+        fromTime:
+          type: string
+          format: date-time
+        toTime:
+          type: string
+          format: date-time
+
+    TrainingJob:
+      type: object
+      required:
+        - id
+        - ledgerId
+        - executionMode
+        - lifecycleStep
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+        ledgerId:
+          type: string
+        executionMode:
+          $ref: "#/components/schemas/ExecutionMode"
+        lifecycleStep:
+          $ref: "#/components/schemas/LifecycleStep"
+        algorithm:
+          type: string
+          enum: [associationRuleMining, riskScore, custom]
+        armThresholds:
+          $ref: "#/components/schemas/ArmThresholds"
+        ledgerWindow:
+          $ref: "#/components/schemas/LedgerWindow"
+        triggerId:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/JobStatus"
+        artefactId:
+          type: string
+          nullable: true
+        errorDetail:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TrainingJobCreate:
+      type: object
+      required: [ledgerId, executionMode, lifecycleStep, algorithm]
+      properties:
+        ledgerId:
+          type: string
+        executionMode:
+          $ref: "#/components/schemas/ExecutionMode"
+        lifecycleStep:
+          $ref: "#/components/schemas/LifecycleStep"
+        algorithm:
+          type: string
+          enum: [associationRuleMining, riskScore, custom]
+        armThresholds:
+          $ref: "#/components/schemas/ArmThresholds"
+        ledgerWindow:
+          $ref: "#/components/schemas/LedgerWindow"
+        triggerId:
+          type: string
+
+    ModelArtefact:
+      type: object
+      required:
+        - id
+        - ledgerId
+        - jobId
+        - algorithm
+        - contentDigest
+        - promotionState
+        - dataLabel
+        - createdAt
+      properties:
+        id:
+          type: string
+        ledgerId:
+          type: string
+        jobId:
+          type: string
+        algorithm:
+          type: string
+        contentDigest:
+          type: string
+        promotionState:
+          $ref: "#/components/schemas/PromotionState"
+        dataLabel:
+          type: string
+          enum: [synthetic, production]
+        armThresholds:
+          $ref: "#/components/schemas/ArmThresholds"
+        ruleCount:
+          type: integer
+          minimum: 0
+        metrics:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        promotedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ModelArtefactCreate:
+      type: object
+      required: [ledgerId, jobId, algorithm, contentDigest, dataLabel]
+      properties:
+        ledgerId:
+          type: string
+        jobId:
+          type: string
+        algorithm:
+          type: string
+        contentDigest:
+          type: string
+        dataLabel:
+          type: string
+          enum: [synthetic, production]
+        armThresholds:
+          $ref: "#/components/schemas/ArmThresholds"
+        ruleCount:
+          type: integer
+        metrics:
+          type: object
+          additionalProperties: true
+
+    ModelPromotionRequest:
+      type: object
+      required: [approverNote]
+      properties:
+        approverNote:
+          type: string
+        dualControlToken:
+          type: string
+
+    AssociationRule:
+      type: object
+      required: [id, artefactId, antecedents, consequents, support, confidence]
+      properties:
+        id:
+          type: string
+        artefactId:
+          type: string
+        antecedents:
+          type: array
+          items:
+            type: string
+          description: Drug or class tokens; no patient identifiers
+        consequents:
+          type: array
+          items:
+            type: string
+        support:
+          type: number
+        confidence:
+          type: number
+        lift:
+          type: number
+          nullable: true
+
+    SmartContractTrigger:
+      type: object
+      required:
+        - id
+        - ledgerId
+        - name
+        - condition
+        - lifecycleStep
+        - enabled
+        - createdAt
+      properties:
+        id:
+          type: string
+        ledgerId:
+          type: string
+        name:
+          type: string
+        condition:
+          $ref: "#/components/schemas/TriggerCondition"
+        lifecycleStep:
+          $ref: "#/components/schemas/LifecycleStep"
+        executionMode:
+          $ref: "#/components/schemas/ExecutionMode"
+        algorithm:
+          type: string
+        armThresholds:
+          $ref: "#/components/schemas/ArmThresholds"
+        newBlocksThreshold:
+          type: integer
+          minimum: 1
+        cronExpression:
+          type: string
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    SmartContractTriggerCreate:
+      type: object
+      required: [ledgerId, name, condition, lifecycleStep, executionMode, algorithm]
+      properties:
+        ledgerId:
+          type: string
+        name:
+          type: string
+        condition:
+          $ref: "#/components/schemas/TriggerCondition"
+        lifecycleStep:
+          $ref: "#/components/schemas/LifecycleStep"
+        executionMode:
+          $ref: "#/components/schemas/ExecutionMode"
+        algorithm:
+          type: string
+        armThresholds:
+          $ref: "#/components/schemas/ArmThresholds"
+        newBlocksThreshold:
+          type: integer
+        cronExpression:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+
+    SmartContractTriggerPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        enabled:
+          type: boolean
+        newBlocksThreshold:
+          type: integer
+        cronExpression:
+          type: string
+        armThresholds:
+          $ref: "#/components/schemas/ArmThresholds"
+
+    ProvenanceRecord:
+      type: object
+      required: [id, ledgerId, eventType, subjectType, subjectId, recordedAt]
+      properties:
+        id:
+          type: string
+        ledgerId:
+          type: string
+        eventType:
+          type: string
+          enum:
+            - eventAnchored
+            - jobTriggered
+            - jobCompleted
+            - artefactRegistered
+            - artefactPromoted
+            - artefactRejected
+            - freezeIssued
+            - auditExported
+        subjectType:
+          type: string
+          enum: [event, job, artefact, trigger, member, export]
+        subjectId:
+          type: string
+        relatedIds:
+          type: object
+          additionalProperties:
+            type: string
+        digest:
+          type: string
+        recordedAt:
+          type: string
+          format: date-time
+
+    ProvenanceExportRequest:
+      type: object
+      required: [ledgerId, from, to]
+      properties:
+        ledgerId:
+          type: string
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        includePhi:
+          type: boolean
+          default: false
+          description: Must remain false for standard regulator packs
+
+    ProvenanceExport:
+      type: object
+      required: [id, ledgerId, recordCount, createdAt, downloadRef]
+      properties:
+        id:
+          type: string
+        ledgerId:
+          type: string
+        recordCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        downloadRef:
+          type: string
+
+    FreezeOrder:
+      type: object
+      required: [id, memberId, reason, issuedBy, issuedAt]
+      properties:
+        id:
+          type: string
+        memberId:
+          type: string
+        reason:
+          type: string
+        issuedBy:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    FreezeOrderCreate:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    DataEnvelopeLedgerNetwork:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/LedgerNetwork"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopePharmacyMember:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/PharmacyMember"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopePrescriptionEventRef:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/PrescriptionEventRef"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeTrainingJob:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/TrainingJob"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeModelArtefact:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ModelArtefact"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeSmartContractTrigger:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/SmartContractTrigger"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeProvenanceRecord:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ProvenanceRecord"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeProvenanceExport:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ProvenanceExport"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeFreezeOrder:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/FreezeOrder"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    ListEnvelopeLedgerNetwork:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/LedgerNetwork"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    ListEnvelopePharmacyMember:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/PharmacyMember"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    ListEnvelopePrescriptionEventRef:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/PrescriptionEventRef"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    ListEnvelopeTrainingJob:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/TrainingJob"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    ListEnvelopeModelArtefact:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ModelArtefact"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    ListEnvelopeAssociationRule:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssociationRule"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    ListEnvelopeSmartContractTrigger:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/SmartContractTrigger"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    ListEnvelopeProvenanceRecord:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProvenanceRecord"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
